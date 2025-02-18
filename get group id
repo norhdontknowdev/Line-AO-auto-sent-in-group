@@ -1,0 +1,84 @@
+//เพิ่ม AO เข้ากลุ่ม --> ให้ user ส่งข้อความทดสอบ groupid จะอยู่ใน sheet
+function doPost(e) {
+  if (e == null || e.postData == null || e.postData.contents == null) {
+    return;
+  }
+ 
+  var requestJSON = e.postData.contents;
+  var requestObj = JSON.parse (requestJSON).events[0];
+  var message,replyToken;
+  
+  message = requestObj.message.text;
+  replyToken = requestObj.replyToken;
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Sheet1')
+  var headers = ss.getRange (1,1,1, ss.getLastColumn ()).getValues()[0];
+
+  var values = [];
+
+  for (i in headers) {
+    var header = headers [i];
+    var val = "";
+    switch (header) {
+      case "DateLine":
+        val = requestObj.timestamp;
+        break;
+      case "DateExcel":
+        val = Date();
+        break;
+      case "Text":
+        val = requestObj.message.text;
+        break;
+      case "displayName":
+        val = requestObj.displayName;
+        break;
+       case "ID":
+        val = requestObj.source.userId;
+        break;  
+        case "replyToken":
+        val = requestObj.replyToken;
+        break;
+        case "roomId":
+        val = requestObj.source.roomId;
+        break; 
+        case "groupId":
+        val = requestObj.source.groupId;
+        break;
+
+      //In other cases, return the specified value in content
+      default:
+      break;
+    }
+    values.push (val);
+    Logger.log(values)
+  }
+  // Add row
+  ss.appendRow (values);
+  //return sendLineMessageFromReplyToken(replyToken,message);  
+}
+
+var channel_access_token = "GGG"; //ใส่ token
+
+function sendLineMessageFromReplyToken(token,replyText){
+  var url = "https://api.line.me/v2/bot/message/reply";
+  var headers = {
+    "Content-Type" : "application/json; charset=UTF-8",
+    "Authorization" : "Bearer " + channel_access_token
+  };
+
+  var postData = {
+    "replyToken" : token,
+    "messages" : [{
+      "type" : "text",
+      "text" : replyText
+    }]
+  };
+
+  var options = {
+    "method" : "POST",
+    "headers" : headers,
+    "payload" : JSON.stringify(postData)
+  };
+
+  return UrlFetchApp.fetch(url, options);  
+}
